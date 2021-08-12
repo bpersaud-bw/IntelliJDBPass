@@ -4,6 +4,8 @@ import getpass
 from pykeepass import PyKeePass
 from xml.etree import ElementTree as ET
 
+header_columns = ["Connection","Password"]
+
 def get_connection_uuid(datasources_xml_file, name):
     print(f"Reading Datasources XML file: {datasources_xml_file}")
     tree = ET.parse(datasources_xml_file)
@@ -21,13 +23,12 @@ def get_password_from_keepass_db(keepass_file, password, uuid):
         raise UnknownKeepassEntry(uuid)
     return entry.password
 
-def write_to_file(filename, data_dict):
+def write_to_file(filename, data_dict_list):
     print(f"Writing to {filename}")
-    fieldnames = ["connection","password"]
     with open(filename, "w", newline="") as fout:
-        writer = csv.DictWriter(fout, fieldnames=fieldnames)
+        writer = csv.DictWriter(fout, fieldnames=header_columns)
         writer.writeheader()
-        writer.writerows(data_dict)
+        writer.writerows(data_dict_list)
 
 def main():
     parser = argparse.ArgumentParser(description="This tool allows you to retrieve passwords from your IntelliJ database connections. " \
@@ -41,6 +42,7 @@ def main():
     keepass_file = args.keepassFile
     datasource_file = args.datasourcesXmlFile
     conn = args.connection
+    output_file = args.outputFile
 
     password = getpass.getpass(prompt="Keepass DB Master PW:")
 
@@ -49,6 +51,10 @@ def main():
     conn_pw = get_password_from_keepass_db(keepass_file, password, uuid)
 
     print(f"\nPassword for connection {conn}: {conn_pw}")
+
+    if(output_file != None):
+        data_dict = {"Connection":conn, "Password":conn_pw}
+        write_to_file(output_file, [data_dict])
 
     print("\nDONE")
 
