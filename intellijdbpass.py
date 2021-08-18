@@ -83,6 +83,12 @@ def main():
         uuid_dict = get_connection_uuids(datasource_file)
         get_all_passwords_from_keepass_db(keepass_file, password, uuid_dict)
         data_dict_list = uuid_dict
+        if(output_file == None):
+            print("Passwords (Consider sending passwords to file instead...):")
+            for temp_dict in data_dict_list:
+                conn = temp_dict["Connection"]
+                pw = temp_dict["Password"]
+                print(f"\tConnection {conn}: {pw}")
 
     if(output_file != None):
         write_to_file(output_file, data_dict_list)
