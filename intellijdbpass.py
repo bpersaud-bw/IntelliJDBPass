@@ -4,7 +4,7 @@ import getpass
 from pykeepass import PyKeePass
 from xml.etree import ElementTree as ET
 
-header_columns = ["Connection","Password"]
+header_columns = ["Connection","Username","Password"]
 
 def get_connection_uuid(datasources_xml_file, name):
     """
@@ -38,6 +38,7 @@ def get_all_passwords_from_keepass_db(keepass_file, keepass_file_password, conn_
 
     for conn_dict in conn_dict_list:
         entry = db.find_entries_by_title(f"IntelliJ Platform DB — {conn_dict['uuid']}", first=True)
+        conn_dict["Username"] = entry.username if entry != None else ""
         conn_dict["Password"] = entry.password if entry != None else ""
 
 def get_password_from_keepass_db(keepass_file, keepass_file_password, uuid):
@@ -46,7 +47,7 @@ def get_password_from_keepass_db(keepass_file, keepass_file_password, uuid):
     entry = db.find_entries_by_title(f"IntelliJ Platform DB — {uuid}", first=True)
     if(entry == None):
         raise UnknownKeepassEntry(uuid)
-    return entry.password
+    return (entry.username, entry.password)
 
 def write_to_file(filename, data_dict_list):
     print(f"\nWriting to {filename}")
@@ -75,9 +76,9 @@ def main():
 
     if get_all_conns == False:
         uuid = get_connection_uuid(datasource_file, conn)
-        conn_pw = get_password_from_keepass_db(keepass_file, password, uuid)
-        print(f"\nPassword for connection {conn}: {conn_pw}")
-        data_dict_list = [{"Connection":conn, "Password":conn_pw}]
+        conn_user, conn_pw = get_password_from_keepass_db(keepass_file, password, uuid)
+        print(f"\nPassword for connection {conn}: user: {conn_user}, pass: {conn_pw}")
+        data_dict_list = [{"Connection":conn, "Username":conn_user, "Password":conn_pw}]
     else:
         print("Getting all connections")
         uuid_dict = get_connection_uuids(datasource_file)
@@ -87,8 +88,9 @@ def main():
             print("Passwords (Consider sending passwords to file instead...):")
             for temp_dict in data_dict_list:
                 conn = temp_dict["Connection"]
+                user = temp_dict["Username"]
                 pw = temp_dict["Password"]
-                print(f"\tConnection {conn}: {pw}")
+                print(f"\tConnection {conn}: user: {user}, pw: {pw}")
 
     if(output_file != None):
         write_to_file(output_file, data_dict_list)
